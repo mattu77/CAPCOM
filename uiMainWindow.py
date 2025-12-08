@@ -5,7 +5,7 @@ import webbrowser
 
 from PyQt6 import QtCore
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtCore import QUrl
+from PyQt6.QtCore import QUrl, QMimeDatabase
 from PyQt6.QtWidgets import QApplication, QHBoxLayout
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout
 from PyQt6.QtWidgets import QWidget, QFileDialog, QSystemTrayIcon, QMenu
@@ -15,11 +15,11 @@ from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage
 
 class MainWindow(QMainWindow):
 
-    __messengerUrl = 'https://web.whatsapp.com/'
-
-    def __init__(self):
+    def __init__(self, name, serviceUrl):
         QMainWindow.__init__(self)
-        self.setWindowTitle("CAPCOM")
+        self.__name = name
+        self.__mainUrl = serviceUrl
+        self.setWindowTitle(self.__name)
         self.setWindowIcon(QIcon(path('ui/icon.png')))
         self.resize(1280, 960)
         self.setStyleSheet('QMainWindow {background: "black";}')
@@ -35,19 +35,21 @@ class MainWindow(QMainWindow):
         self.webview.loadFinished.connect(self.loadFinished)
 
         self.profile = QWebEngineProfile('MyProfile')
-        self.profile.setPersistentStoragePath(user_config_dir() + '/capcom/storage')
-        self.profile.setCachePath(path(user_config_dir() + '/capcom/cache'))
+        self.profile.setPersistentStoragePath(user_config_dir() + '/'+ self.__name +'/storage')
+        self.profile.setCachePath(path(user_config_dir() + '/'+ self.__name +'/cache'))
+        self.profile.setHttpUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36')
         self.profile.setPersistentCookiesPolicy(QWebEngineProfile.PersistentCookiesPolicy.ForcePersistentCookies)
         self.profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.DiskHttpCache)
-        self.profile.setHttpUserAgent('Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36')
         self.profile.downloadRequested.connect(self.download)
+        self.profile.setNotificationPresenter(self.presentNotification)
         self.webpage = QWebEnginePage(self.profile, self.webview)
         self.webpage.navigationRequested.connect(self.navigationRequest)
         self.webview.setPage(self.webpage)
+        self.webview.page().featurePermissionRequested.connect(self.setFeaturePermission)
 
         self.tray = QSystemTrayIcon(self)
         self.tray.setIcon(QIcon(path('ui/icon.png')))
-        self.tray.setToolTip('CAPCOM')
+        self.tray.setToolTip(self.__name)
 
         # Add a context menu to the tray icon
         self.trayMenu = QMenu()
@@ -81,11 +83,21 @@ class MainWindow(QMainWindow):
         self.widget.setLayout(self.layout)
         self.setCentralWidget(self.widget)
 
-        self.webview.load(QUrl(self.__messengerUrl))
+        self.webview.load(QUrl(self.__mainUrl))
+
+    def setFeaturePermission(self, origin: QUrl, feature: QWebEnginePage.Feature):
+        if feature != QWebEnginePage.Feature.Notifications:
+            return
+
+        self.webview.page().setFeaturePermission(origin, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+
+    def presentNotification(self, notification):
+        self.tray.showMessage(notification.title(), notification.message())
 
     def urlChanged(self, url):
-        if not (url.toString().startswith(self.__messengerUrl) or url.toString().startswith('https://www.whatsapp.com')):
-            self.webview.load(QUrl(self.__messengerUrl))
+        print(url)
+        if not (url.toString().startswith(self.__mainUrl)):
+            self.webview.load(QUrl(self.__mainUrl))
             webbrowser.open(url.toString(), new=0, autoraise=True)
         #self.url_text.setText(url.toString())
 
@@ -102,18 +114,22 @@ class MainWindow(QMainWindow):
         QApplication.restoreOverrideCursor()
 
     def download(self, item):
-        fname, _ = QFileDialog.getSaveFileName(self, 'Save as', item.downloadFileName(), 'All Files (*)')
+        #print(item.mimeType())
+        mtdb = QMimeDatabase()
+        mt = mtdb.mimeTypeForName(item.mimeType())
+        fname, _ = QFileDialog.getSaveFileName(self, 'Save as', item.downloadFileName(), mt.filterString())
         if fname:
             item.setDownloadDirectory(os.path.dirname(fname))
             item.setDownloadFileName(os.path.basename(fname))
             item.accept()
 
     def navigationRequest(self, request):
+        #print(request.url())
         #url = request.url().toString()
-        #if not (url.startswith(self.__messengerUrl) or url.startswith('https://www.facebook.com/auth_platform')):
+        #if not (url.startswith(self.__mainUrl) or url.startswith('https://www.facebook.com/auth_platform')):
         #    request.reject()
         #else:
-            request.accept()
+        request.accept()
 
     def reload(self):
         self.webview.reload()

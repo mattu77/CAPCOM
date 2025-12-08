@@ -9,7 +9,7 @@ if __name__ == "__main__":
     #app.setQuitOnLastWindowClosed(False)
     app.setStyle('fusion')
 
-    mainWindow = MainWindow()
+    mainWindow = MainWindow('CAPCOM', 'https://web.whatsapp.com/')
 
     minimized = False
     if len(sys.argv) > 1:
