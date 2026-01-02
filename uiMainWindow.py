@@ -10,8 +10,7 @@ from PyQt6.QtWidgets import QApplication, QHBoxLayout
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout
 from PyQt6.QtWidgets import QWidget, QFileDialog, QSystemTrayIcon, QMenu
 from PyQt6.QtWebEngineWidgets import QWebEngineView
-from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage, QWebEnginePermission, \
-    QWebEngineUrlRequestInterceptor, QWebEngineUrlRequestInfo, QWebEngineNewWindowRequest
+from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage, QWebEnginePermission, QWebEngineNewWindowRequest
 
 
 class MainWindow(QMainWindow):
