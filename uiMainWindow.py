@@ -88,11 +88,9 @@ class MainWindow(QMainWindow):
         self.webview.load(QUrl(self.__mainUrl))
 
     def setFeaturePermission(self, origin: QUrl, feature: QWebEnginePage.Feature):
-        print(feature)
-        if feature != QWebEnginePage.Feature.Notifications:
-            return
-
-        self.webview.page().setFeaturePermission(origin, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
+        print(feature.name)
+        if feature == QWebEnginePage.Feature.Notifications:
+            self.webview.page().setFeaturePermission(origin, feature, QWebEnginePage.PermissionPolicy.PermissionGrantedByUser)
 
     def setPermission(self, permission: QWebEnginePermission):
         print(permission.origin())
